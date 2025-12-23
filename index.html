@@ -3,83 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rubik's Pro Max - Final Logic Fixed</title>
+    <title>Rubik's Cube Pro - Final Stable Edition</title>
     <style>
-        :root { --bg: #050505; --cyan: #00f2ff; --gold: #f1c40f; --panel: rgba(20, 20, 20, 0.98); }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'PingFang SC', sans-serif; color: white; touch-action: none; }
-        #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+        :root { --bg: #0a0a0a; --panel: rgba(20, 20, 20, 0.95); --cyan: #00f2ff; --gold: #f1c40f; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica; color: white; touch-action: none; }
+        
+        /* UI层：确保不挡住魔方 */
+        #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
         .pointer { pointer-events: auto; }
 
-        /* 左侧：状态与教学 */
-        .left-panel { position: absolute; left: 20px; top: 20px; width: 240px; background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #444; }
-        .timer { font-family: monospace; font-size: 36px; color: var(--gold); text-align: center; margin: 10px 0; }
-        .guide-text { font-size: 12px; color: #aaa; line-height: 1.6; border-top: 1px solid #333; padding-top: 10px; }
+        /* 左侧信息卡 */
+        .info-card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .timer { font-family: 'Courier New', monospace; font-size: 32px; color: var(--gold); text-align: center; margin: 8px 0; }
+        .mode-tag { color: var(--cyan); font-size: 12px; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 4px; margin-bottom: 8px; }
 
-        /* 右侧：操作面板 (UDL RFB) - 解决遮挡 */
+        /* 右侧操作按钮组 - 垂直排列 */
         .right-panel { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
-        .btn-move { 
-            width: 60px; height: 60px; background: #2a2a2a; color: white; border: 1px solid #555; 
-            border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.1s;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        .move-btn { 
+            width: 58px; height: 58px; background: #222; color: white; border: 1px solid #444; border-radius: 10px; 
+            font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .btn-move:active { background: var(--cyan); color: #000; transform: scale(0.9); }
-        .btn-move span { font-size: 10px; font-weight: normal; opacity: 0.6; }
+        .move-btn:active { background: var(--cyan); color: #000; }
+        .move-btn span { font-size: 9px; font-weight: normal; opacity: 0.6; }
 
-        /* 辅助模式专用工具 */
-        #palette { display: none; position: absolute; right: 90px; top: 50%; transform: translateY(-50%); flex-direction: column; gap: 12px; }
-        .ink { width: 35px; height: 35px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
-        .ink.active { border-color: white; box-shadow: 0 0 15px white; }
-
-        /* 底部控制 */
-        .bottom-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .mode-switch { display: flex; gap: 10px; background: #111; padding: 6px; border-radius: 10px; }
-        .m-btn { background: none; color: #666; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        /* 底部功能栏 */
+        .bottom-bar { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 20px; }
+        .mode-selector { display: flex; gap: 8px; background: #111; padding: 5px; border-radius: 10px; }
+        .m-btn { background: none; color: #777; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .m-btn.active { background: var(--cyan); color: #000; font-weight: bold; }
-        .btn-main { background: #e67e22; color: white; font-weight: bold; padding: 15px 50px; border-radius: 12px; border: none; font-size: 18px; cursor: pointer; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .scramble-btn { background: #e67e22; color: white; font-weight: bold; padding: 14px 60px; border-radius: 12px; border: none; font-size: 16px; cursor: pointer; }
+
+        /* 辅助模式：调色盘 */
+        #palette { display: none; position: absolute; right: 90px; top: 50%; transform: translateY(-50%); flex-direction: column; gap: 10px; }
+        .color-ink { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+        .color-ink.active { border-color: white; box-shadow: 0 0 10px white; }
     </style>
 </head>
 <body>
 
 <div id="ui-layer">
-    <div class="left-panel pointer">
-        <div id="mode-title" style="color:var(--cyan); font-weight:bold;">经典模式 CLASSIC</div>
+    <div class="info-card pointer">
+        <div id="mode-display" class="mode-tag">经典模式 CLASSIC</div>
         <div id="timer" class="timer">00:00.0</div>
-        <div class="guide-text" id="guide-info">
-            • <b>滑动背景</b>：旋转视角<br>
-            • <b>右侧按钮</b>：旋转魔方层级<br>
-            • <b>打乱</b>：开始计时挑战
+        <div style="font-size: 11px; color: #888; line-height: 1.4;">
+            • 滑动背景：旋转视角<br>
+            • 右侧按钮：旋转魔方层级
         </div>
-        <div id="solver-ui" style="display:none; margin-top:15px; border-top:1px solid #444; padding-top:15px;">
-            <button onclick="startAutoSolve()" style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">智能生成复原路径</button>
-            <div id="step-counter" style="text-align:center; font-size:12px; margin-top:8px; color:var(--gold);"></div>
+        <div id="assist-tools" style="display:none; margin-top:10px; border-top:1px solid #444; padding-top:10px;">
+            <button onclick="generateSolve()" style="width:100%; padding:8px; background:#2ecc71; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">生成演示步骤</button>
+            <div id="step-info" style="font-size:10px; color:var(--gold); text-align:center; margin-top:5px;"></div>
         </div>
     </div>
 
-    <div class="right-panel pointer" id="move-controls">
-        <button class="btn-move" onclick="handleRotate('y', 2, 1)">U<span>顶层</span></button>
-        <button class="btn-move" onclick="handleRotate('y', 0, -1)">D<span>底层</span></button>
-        <button class="btn-move" onclick="handleRotate('x', 0, -1)">L<span>左层</span></button>
-        <button class="btn-move" onclick="handleRotate('x', 2, 1)">R<span>右层</span></button>
-        <button class="btn-move" onclick="handleRotate('z', 2, 1)">F<span>前层</span></button>
-        <button class="btn-move" onclick="handleRotate('z', 0, -1)">B<span>后层</span></button>
+    <div class="right-panel pointer" id="move-panel">
+        <button class="move-btn" onclick="rotateLayer('y', 2, 1)">U<span>顶层</span></button>
+        <button class="move-btn" onclick="rotateLayer('y', 0, -1)">D<span>底层</span></button>
+        <button class="move-btn" onclick="rotateLayer('x', 0, -1)">L<span>左层</span></button>
+        <button class="move-btn" onclick="rotateLayer('x', 2, 1)">R<span>右层</span></button>
+        <button class="move-btn" onclick="rotateLayer('z', 2, 1)">F<span>前层</span></button>
+        <button class="move-btn" onclick="rotateLayer('z', 0, -1)">B<span>后层</span></button>
     </div>
 
     <div id="palette" class="pointer">
-        <div class="ink active" style="background:#fff" onclick="selectColor(0,this)"></div>
-        <div class="ink" style="background:#ff0" onclick="selectColor(1,this)"></div>
-        <div class="ink" style="background:#f90" onclick="selectColor(2,this)"></div>
-        <div class="ink" style="background:#f00" onclick="selectColor(3,this)"></div>
-        <div class="ink" style="background:#0f0" onclick="selectColor(4,this)"></div>
-        <div class="ink" style="background:#00f" onclick="selectColor(5,this)"></div>
+        <div class="color-ink active" style="background:#fff" onclick="pickInk(0,this)"></div>
+        <div class="color-ink" style="background:#ff0" onclick="pickInk(1,this)"></div>
+        <div class="color-ink" style="background:#f90" onclick="pickInk(2,this)"></div>
+        <div class="color-ink" style="background:#f00" onclick="pickInk(3,this)"></div>
+        <div class="color-ink" style="background:#0f0" onclick="pickInk(4,this)"></div>
+        <div class="color-ink" style="background:#00f" onclick="pickInk(5,this)"></div>
     </div>
 
-    <div class="bottom-area pointer">
-        <div class="mode-switch">
-            <button id="btn-c" class="m-btn active" onclick="changeMode('Classic')">经典</button>
-            <button id="btn-t" class="m-btn" onclick="changeMode('Time')">计时</button>
-            <button id="btn-a" class="m-btn" onclick="changeMode('Assist')">辅助</button>
+    <div class="bottom-bar pointer">
+        <div class="mode-selector">
+            <button id="btn-classic" class="m-btn active" onclick="setMode('Classic')">经典</button>
+            <button id="btn-time" class="m-btn" onclick="setMode('Time')">计时</button>
+            <button id="btn-assist" class="m-btn" onclick="setMode('Assist')">辅助</button>
         </div>
-        <button class="btn-main" onclick="onScramble()">打乱魔方 SCRAMBLE</button>
+        <button class="scramble-btn" onclick="scramble()">打乱魔方 SCRAMBLE</button>
     </div>
 </div>
 
@@ -88,16 +88,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
 <script>
-/**
- * 修复逻辑核心说明：
- * 1. 物理对齐：每一转完成后强行执行 Math.round，防止“碎纸片”。
- * 2. 复原路径：记录所有操作，辅助模式下进行“逆元运算”实现一键复原。
- * 3. 严格判定：检查每个方块的初始ID和当前四元数。
- */
-
 let scene, camera, renderer, controls, cubeGroup, cubies = [];
-let isAnimating = false, currentMode = 'Classic', activeInk = 0;
-let moveStack = [], startTime, timerInterval, racing = false;
+let isBusy = false, curMode = 'Classic', ink = 0;
+let history = [], startTime, timerItv, isRacing = false;
 const COLORS = [0xffffff, 0xffff00, 0xffa500, 0xff0000, 0x00ff00, 0x0046ad];
 
 function init() {
@@ -112,25 +105,23 @@ function init() {
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const light = new THREE.DirectionalLight(0xffffff, 0.4);
-    light.position.set(10, 20, 10);
-    scene.add(light);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+    sun.position.set(10, 20, 10);
+    scene.add(sun);
 
-    buildCube();
+    createCube();
     animate();
 
-    window.addEventListener('resize', onResize);
-    renderer.domElement.addEventListener('pointerdown', onPointClick);
+    window.addEventListener('resize', onWindowResize);
+    renderer.domElement.addEventListener('pointerdown', onCubeClick);
 }
 
-function buildCube() {
+function createCube() {
     if(cubeGroup) scene.remove(cubeGroup);
     cubeGroup = new THREE.Group();
     cubies = [];
-
     for(let x=0; x<3; x++) {
         for(let y=0; y<3; y++) {
             for(let z=0; z<3; z++) {
@@ -138,7 +129,7 @@ function buildCube() {
                 const geom = new THREE.BoxGeometry(0.97, 0.97, 0.97);
                 const mats = [];
                 for(let i=0; i<6; i++) {
-                    let c = 0x1a1a1a;
+                    let c = 0x111111;
                     if(i===0 && x===2) c = COLORS[3];
                     if(i===1 && x===0) c = COLORS[2];
                     if(i===2 && y===2) c = COLORS[0];
@@ -149,8 +140,7 @@ function buildCube() {
                 }
                 const mesh = new THREE.Mesh(geom, mats);
                 mesh.position.set(x-1, y-1, z-1);
-                // 关键：锁定初始位置
-                mesh.userData = { home: mesh.position.clone(), id: `${x}${y}${z}` };
+                mesh.userData.home = mesh.position.clone(); // 记录复原点
                 cubeGroup.add(mesh);
                 cubies.push(mesh);
             }
@@ -159,16 +149,16 @@ function buildCube() {
     scene.add(cubeGroup);
 }
 
-// 物理转动引擎：彻底修复“碎纸片”
-function handleRotate(axis, layer, dir, record = true) {
-    if(isAnimating) return;
-    isAnimating = true;
-
-    if(record) moveStack.push({axis, layer, dir});
+// 物理转动：加入强制对齐逻辑，杜绝碎纸片
+function rotateLayer(axis, layer, dir, record = true) {
+    if(isBusy) return;
+    isBusy = true;
+    if(record) history.push({axis, layer, dir});
 
     const pivot = new THREE.Group();
     scene.add(pivot);
 
+    // 选取当前层的方块
     const targets = cubies.filter(c => {
         const wp = new THREE.Vector3();
         c.getWorldPosition(wp);
@@ -177,13 +167,13 @@ function handleRotate(axis, layer, dir, record = true) {
 
     targets.forEach(c => pivot.attach(c));
 
-    const targetRot = (Math.PI / 2) * dir;
-    new TWEEN.Tween(pivot.rotation).to({ [axis]: targetRot }, 300)
+    new TWEEN.Tween(pivot.rotation).to({ [axis]: (Math.PI/2) * dir }, 300)
         .easing(TWEEN.Easing.Quadratic.Out)
         .onComplete(() => {
+            pivot.updateMatrixWorld();
             targets.forEach(c => {
                 cubeGroup.attach(c);
-                // 物理吸附：坐标和旋转取整，防止偏差累积导致破碎
+                // 终极修复：坐标和旋转强制取整对齐
                 c.position.set(Math.round(c.position.x), Math.round(c.position.y), Math.round(c.position.z));
                 c.rotation.set(
                     Math.round(c.rotation.x / (Math.PI/2)) * (Math.PI/2),
@@ -192,101 +182,99 @@ function handleRotate(axis, layer, dir, record = true) {
                 );
             });
             scene.remove(pivot);
-            isAnimating = false;
-            if(racing) validateSolve();
+            isBusy = false;
+            if(isRacing) checkWin();
         }).start();
 }
 
-function validateSolve() {
-    const solved = cubies.every(c => {
+function checkWin() {
+    const isSolved = cubies.every(c => {
         const posMatch = c.position.distanceTo(c.userData.home) < 0.1;
-        const rotMatch = Math.abs(c.rotation.x % (Math.PI*2)) < 0.1 && 
-                         Math.abs(c.rotation.y % (Math.PI*2)) < 0.1 && 
-                         Math.abs(c.rotation.z % (Math.PI*2)) < 0.1;
+        const rotMatch = 
+            Math.abs(c.rotation.x % (Math.PI * 2)) < 0.1 &&
+            Math.abs(c.rotation.y % (Math.PI * 2)) < 0.1 &&
+            Math.abs(c.rotation.z % (Math.PI * 2)) < 0.1;
         return posMatch && rotMatch;
     });
 
-    if(solved && racing) {
-        clearInterval(timerInterval);
-        racing = false;
-        alert("恭喜复原！耗时：" + document.getElementById('timer').innerText);
+    if(isSolved && isRacing) {
+        clearInterval(timerItv);
+        isRacing = false;
+        setTimeout(() => alert("复原成功！用时: " + document.getElementById('timer').innerText), 100);
     }
 }
 
-function onScramble() {
-    moveStack = [];
+function scramble() {
+    history = [];
     let moves = 0;
     const itv = setInterval(() => {
         const axes = ['x','y','z'];
-        handleRotate(axes[Math.floor(Math.random()*3)], Math.floor(Math.random()*3), 1);
-        if(++moves >= 15) {
+        rotateLayer(axes[Math.floor(Math.random()*3)], Math.floor(Math.random()*3), 1);
+        if(++moves >= 12) {
             clearInterval(itv);
-            if(currentMode === 'Time') {
-                startTime = Date.now();
-                racing = true;
-                timerInterval = setInterval(() => {
-                    document.getElementById('timer').innerText = ((Date.now()-startTime)/1000).toFixed(1) + 's';
-                }, 100);
-            }
+            if(curMode === 'Time') startTimer();
         }
-    }, 400);
+    }, 350);
 }
 
-function changeMode(m) {
-    currentMode = m; racing = false;
-    clearInterval(timerInterval);
+function startTimer() {
+    startTime = Date.now();
+    isRacing = true;
+    timerItv = setInterval(() => {
+        document.getElementById('timer').innerText = ((Date.now() - startTime)/1000).toFixed(1) + "s";
+    }, 100);
+}
+
+function setMode(m) {
+    curMode = m; isRacing = false;
+    clearInterval(timerItv);
     document.getElementById('timer').innerText = "00:00.0";
     document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-' + m[0].toLowerCase()).classList.add('active');
+    document.getElementById('btn-' + m.toLowerCase()).classList.add('active');
     
-    document.getElementById('mode-title').innerText = m.toUpperCase() + (m==='Classic'?' / 经典模式':(m==='Time'?' / 计时模式':' / 辅助模式'));
+    document.getElementById('mode-display').innerText = m.toUpperCase() + (m==='Classic'?' / 经典模式':(m==='Time'?' / 计时模式':' / 辅助模式'));
     document.getElementById('palette').style.display = (m==='Assist'?'flex':'none');
-    document.getElementById('solver-ui').style.display = (m==='Assist'?'block':'none');
-    document.getElementById('move-controls').style.display = (m==='Assist'?'none':'flex');
+    document.getElementById('assist-tools').style.display = (m==='Assist'?'block':'none');
+    document.getElementById('move-panel').style.display = (m==='Assist'?'none':'flex');
     
-    buildCube();
+    createCube();
 }
 
-// 智能还原：逆元解法逻辑
-function startAutoSolve() {
-    if(moveStack.length === 0) return alert("已经是复原状态 / Already Solved");
-    const steps = [...moveStack].reverse();
-    moveStack = []; // 清空，防止递归
-    
+function generateSolve() {
+    if(history.length === 0) return alert("已经是复原状态");
+    const solution = [...history].reverse();
     let i = 0;
     const solveItv = setInterval(() => {
-        const s = steps[i];
-        handleRotate(s.axis, s.layer, -s.dir, false);
-        document.getElementById('step-counter').innerText = `剩余步骤: ${steps.length - i - 1}`;
-        if(++i >= steps.length) {
+        const s = solution[i];
+        rotateLayer(s.axis, s.layer, -s.dir, false);
+        document.getElementById('step-info').innerText = `正在演示: ${i+1}/${solution.length}`;
+        if(++i >= solution.length) {
             clearInterval(solveItv);
-            setTimeout(() => {
-                document.getElementById('step-counter').innerText = "复原完成！";
-                alert("已完成智能复原演示！");
-            }, 500);
+            history = [];
+            alert("演示完毕！");
         }
-    }, 500);
+    }, 600);
 }
 
-function selectColor(idx, el) {
-    activeInk = idx;
-    document.querySelectorAll('.ink').forEach(k => k.classList.remove('active'));
-    el.classList.add('active');
-}
-
-function onPointClick(e) {
-    if(currentMode !== 'Assist') return;
+function onCubeClick(e) {
+    if(curMode !== 'Assist') return;
     const ray = new THREE.Raycaster();
-    const m = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
-    ray.setFromCamera(m, camera);
+    const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+    ray.setFromCamera(mouse, camera);
     const hits = ray.intersectObjects(cubies);
     if(hits.length > 0) {
         const faceIdx = Math.floor(hits[0].faceIndex / 2);
-        hits[0].object.material[faceIdx].color.setHex(COLORS[activeInk]);
+        hits[0].object.material[faceIdx].color.setHex(COLORS[ink]);
     }
 }
 
-function onResize() {
+function pickInk(i, el) {
+    ink = i;
+    document.querySelectorAll('.color-ink').forEach(k => k.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function onWindowResize() {
     camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
