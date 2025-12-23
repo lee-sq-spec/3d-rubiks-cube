@@ -3,81 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Rubik's Cube Ultimate | 3D 魔方旗舰版</title>
+    <title>Rubik's Pro Max - 3D</title>
     <style>
-        :root { --primary: #3498db; --accent: #2ecc71; --bg: #0d0d0d; --panel: rgba(25, 25, 25, 0.95); }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'PingFang SC', sans-serif; color: white; touch-action: none; }
+        :root { --bg: #050505; --panel: rgba(20, 20, 20, 0.95); --primary: #00f2ff; --accent: #e67e22; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; color: white; touch-action: none; }
         
-        #game-ui { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
+        /* UI 顶层容器 */
+        #hud { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
         .pointer { pointer-events: auto; }
-
+        
+        /* 顶部栏 */
         .header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .info-panel { background: var(--panel); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .timer { font-family: 'Courier New', monospace; font-size: 32px; color: #f1c40f; font-weight: bold; }
-        
-        .history-panel { width: 220px; background: var(--panel); border-radius: 12px; padding: 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .history-list { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 120px; overflow-y: auto; }
-        .history-item { padding: 4px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+        .info-box { background: var(--panel); padding: 10px 15px; border-radius: 12px; border: 1px solid #333; min-width: 150px; }
+        .timer { font-family: 'Courier New', monospace; font-size: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241,196,15,0.3); }
 
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; padding-bottom: 30px; }
-        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        .btn-group { display: flex; background: var(--panel); padding: 5px; border-radius: 10px; gap: 5px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        button { 
-            background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; 
-            cursor: pointer; font-size: 13px; transition: 0.2s; display: flex; flex-direction: column; align-items: center;
-        }
-        button span { font-size: 10px; opacity: 0.6; }
-        button.active { background: var(--primary); }
-        button.scramble { background: #e67e22; font-weight: bold; padding: 12px 25px; font-size: 16px; }
-        
-        /* 辅助模式提示 */
-        #assist-hint { 
-            background: rgba(46, 204, 113, 0.2); border: 1px solid var(--accent); 
-            padding: 8px; border-radius: 8px; margin-top: 10px; font-size: 12px; display: none;
-        }
+        /* 玩法指南面板 */
+        .guide-box { background: rgba(0, 242, 255, 0.1); border: 1px solid var(--primary); padding: 10px; border-radius: 8px; font-size: 11px; margin-top: 10px; max-width: 200px; line-height: 1.4; }
 
-        @media (max-width: 600px) {
-            .header { flex-direction: column; gap: 10px; }
-            .history-panel { width: 100%; }
-        }
+        /* 历史记录 (本地私有) */
+        .history { width: 180px; background: var(--panel); padding: 10px; border-radius: 12px; font-size: 11px; border: 1px solid #333; }
+        .hist-list { max-height: 80px; overflow-y: auto; margin-top: 5px; }
+        .hist-item { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 2px 0; }
+
+        /* 调色盘 (辅助模式) */
+        #palette { display: none; flex-direction: column; gap: 8px; background: var(--panel); padding: 8px; border-radius: 10px; }
+        .ink { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+        .ink.selected { border-color: white; transform: scale(1.1); box-shadow: 0 0 10px white; }
+
+        /* 底部控制区 */
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 20px; }
+        .btn-group { display: flex; gap: 6px; background: var(--panel); padding: 5px; border-radius: 10px; pointer-events: auto; }
+        button { background: #252525; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        button.active { background: var(--primary); color: #000; font-weight: bold; }
+        
+        /* 物理旋转控制按钮 */
+        #phys-ctrl { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+        .dir-btn { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); color: black; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,242,255,0.4); }
+        .layer-select { background: #333; color: white; border-radius: 6px; padding: 10px; font-size: 12px; }
+
+        @media (max-width: 600px) { .header { flex-direction: column; gap: 10px; } .history { width: 100%; } }
     </style>
 </head>
 <body>
 
-<div id="game-ui">
+<div id="hud">
     <div class="header">
-        <div class="info-panel pointer">
-            <div id="mode-text" style="font-size:13px; color:#aaa">经典模式 Classic</div>
-            <div id="timer-display" class="timer">00:00.0</div>
-            <div id="assist-hint" class="pointer">点击魔方表面填色<br>Click faces to set color</div>
+        <div class="info-box pointer">
+            <div id="m-label" style="color:var(--primary); font-weight:bold;">CLASSIC 经典</div>
+            <div id="timer" class="timer">00:00.0</div>
+            <div id="guide-content" class="guide-box">
+                <b>玩法玩法 How to Play:</b><br>
+                1. 点击下方 L/M/R 选择要转动的层。<br>
+                2. 点击箭头按钮进行旋转。<br>
+                3. 操作层会闪烁青色提示。
+            </div>
         </div>
 
-        <div class="history-panel pointer">
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #444; padding-bottom:5px;">
-                <span>历史记录 History (Latest 10)</span>
-                <b id="log-count">0/10</b>
-            </div>
-            <ul id="history-list" class="history-list"></ul>
+        <div id="palette" class="pointer">
+            <div class="ink" style="background:#fff" onclick="pickColor(0,this)"></div>
+            <div class="ink" style="background:#ff0" onclick="pickColor(1,this)"></div>
+            <div class="ink" style="background:#f90" onclick="pickColor(2,this)"></div>
+            <div class="ink" style="background:#f00" onclick="pickColor(3,this)"></div>
+            <div class="ink" style="background:#0f0" onclick="pickColor(4,this)"></div>
+            <div class="ink" style="background:#00f" onclick="pickColor(5,this)"></div>
+        </div>
+
+        <div class="history pointer">
+            <div style="border-bottom:1px solid #444; padding-bottom:3px;">我的历史 My History (Private)</div>
+            <div id="hist-list" class="hist-list"></div>
         </div>
     </div>
 
     <div class="controls pointer">
-        <div class="btn-row">
-            <div class="btn-group">
-                <button onclick="changeMode('Classic')" id="btn-Classic" class="active">经典<span>Classic</span></button>
-                <button onclick="changeMode('Time Trial')" id="btn-TimeTrial">计时<span>Time Trial</span></button>
-                <button onclick="changeMode('Solve Assist')" id="btn-SolveAssist">辅助<span>Assist</span></button>
+        <div id="phys-ctrl" class="pointer">
+            <div class="layer-select">
+                层 Layer: 
+                <select id="layer-idx" style="background:#000; color:#fff; border:1px solid #555;">
+                    <option value="0">左/下 Left/Bottom</option>
+                    <option value="1">中 Middle</option>
+                    <option value="2">右/上 Right/Top</option>
+                </select>
             </div>
-            <div class="btn-group">
-                <button onclick="changeSize(3)">3x3</button>
-                <button onclick="changeSize(4)">4x4</button>
-            </div>
+            <div class="dir-btn" onclick="execRotate(-1)">↺</div>
+            <div class="dir-btn" onclick="execRotate(1)">↻</div>
+        </div>
+
+        <div class="btn-group">
+            <button onclick="setMode('Classic')" id="b-classic" class="active">经典 Classic</button>
+            <button onclick="setMode('Time Trial')" id="b-time">计时 Time</button>
+            <button onclick="setMode('Assist')" id="b-assist">辅助 Assist</button>
         </div>
         
-        <button class="scramble" onclick="handleMainAction()" id="main-action-btn">
-            打乱魔方<br><span>SCRAMBLE</span>
-        </button>
+        <div class="btn-group">
+            <button onclick="changeSize(3)">3x3</button>
+            <button onclick="changeSize(4)">4x4</button>
+            <button onclick="doScramble()" style="background:var(--accent); font-weight:bold;">打乱 SCRAMBLE</button>
+        </div>
     </div>
 </div>
 
@@ -85,23 +106,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
 <script>
-/**
- * 核心逻辑修复说明：
- * 1. 使用拾取器 (Raycaster) 检测点击的具体方块面。
- * 2. 旋转时动态解耦，旋转后重新锁定坐标，防止“动不了”。
- */
-let scene, camera, renderer, cubeGroup, raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
-let cubies = [], cubeSize = 3, currentMode = 'Classic';
-let isRotating = false, startTime = null, timerInterval = null, isPlaying = false;
-
-const COLORS = [0xffffff, 0xffff00, 0xffa500, 0xff0000, 0x00ff00, 0x0046ad]; // 白, 黄, 橙, 红, 绿, 蓝
-const COLOR_NAMES = ['White', 'Yellow', 'Orange', 'Red', 'Green', 'Blue'];
+let scene, camera, renderer, cubeGroup, cubies = [];
+let cubeSize = 3, currentMode = 'Classic', isRotating = false;
+let selectedColor = 0, startTime, timerInt, isPlaying = false;
+const COLORS = [0xffffff, 0xffff00, 0xffa500, 0xff0000, 0x00ff00, 0x0046ad];
 
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(7, 7, 7);
-    camera.lookAt(0, 0, 0);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(6, 6, 10);
+    camera.lookAt(0,0,0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -109,223 +123,204 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    let light = new THREE.DirectionalLight(0xffffff, 0.4);
+    const light = new THREE.PointLight(0xffffff, 0.5);
     light.position.set(10, 20, 10);
     scene.add(light);
 
-    createCube();
-    loadHistory();
+    buildCube();
     animate();
+    setupRaycaster();
+    refreshHistory();
 
-    window.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('touchstart', (e) => onPointerDown(e.touches[0]));
     window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = window.innerWidth/window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 }
 
-function createCube() {
+function buildCube() {
     if (cubeGroup) scene.remove(cubeGroup);
     cubeGroup = new THREE.Group();
     cubies = [];
     const offset = (cubeSize - 1) / 2;
 
-    for (let x = 0; x < cubeSize; x++) {
-        for (let y = 0; y < cubeSize; y++) {
-            for (let z = 0; z < cubeSize; z++) {
-                if (x === 0 || x === cubeSize - 1 || y === 0 || y === cubeSize - 1 || z === 0 || z === cubeSize - 1) {
-                    const geom = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+    for (let x=0; x<cubeSize; x++) {
+        for (let y=0; y<cubeSize; y++) {
+            for (let z=0; z<cubeSize; z++) {
+                if (x==0 || x==cubeSize-1 || y==0 || y==cubeSize-1 || z==0 || z==cubeSize-1) {
+                    const geom = new THREE.BoxGeometry(0.96, 0.96, 0.96);
                     const mats = [];
-                    // 初始颜色赋予
                     for(let i=0; i<6; i++) {
-                        let color = 0x111111;
-                        if (i === 0 && x === cubeSize-1) color = COLORS[3]; // Right - Red
-                        if (i === 1 && x === 0) color = COLORS[2];          // Left - Orange
-                        if (i === 2 && y === cubeSize-1) color = COLORS[0]; // Top - White
-                        if (i === 3 && y === 0) color = COLORS[1];          // Bottom - Yellow
-                        if (i === 4 && z === cubeSize-1) color = COLORS[4]; // Front - Green
-                        if (i === 5 && z === 0) color = COLORS[5];          // Back - Blue
-                        mats.push(new THREE.MeshLambertMaterial({ color: color }));
+                        let c = 0x151515;
+                        if (i==0 && x==cubeSize-1) c = COLORS[3];
+                        if (i==1 && x==0) c = COLORS[2];
+                        if (i==2 && y==cubeSize-1) c = COLORS[0];
+                        if (i==3 && y==0) c = COLORS[1];
+                        if (i==4 && z==cubeSize-1) c = COLORS[4];
+                        if (i==5 && z==0) c = COLORS[5];
+                        mats.push(new THREE.MeshLambertMaterial({ color: c }));
                     }
-                    const cubie = new THREE.Mesh(geom, mats);
-                    cubie.position.set(x - offset, y - offset, z - offset);
-                    // 记录原始相对坐标用于复原检测
-                    cubie.userData = { home: cubie.position.clone() }; 
-                    cubeGroup.add(cubie);
-                    cubies.push(cubie);
+                    const mesh = new THREE.Mesh(geom, mats);
+                    mesh.position.set(x-offset, y-offset, z-offset);
+                    mesh.userData = { initialPos: mesh.position.clone() };
+                    cubeGroup.add(mesh);
+                    cubies.push(mesh);
                 }
             }
         }
     }
     scene.add(cubeGroup);
-    stopTimer();
 }
 
-// 核心：处理填色和视角
-function onPointerDown(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-
-    const intersects = raycaster.intersectObjects(cubies);
-    if (intersects.length > 0) {
-        const hit = intersects[0];
-        if (currentMode === 'Solve Assist') {
-            // 辅助模式：点击变色
-            const faceIndex = Math.floor(hit.faceIndex / 2);
-            const mat = hit.object.material[faceIndex];
-            let currColorIdx = COLORS.indexOf(mat.color.getHex());
-            currColorIdx = (currColorIdx + 1) % COLORS.length;
-            mat.color.setHex(COLORS[currColorIdx]);
-        } else {
-            // 经典/计时模式：点击并准备旋转视角（此处简化为点击方块即随机转动一层演示交互）
-            // 在实际使用中，玩家可以拖拽屏幕空白处旋转视角
-        }
-    }
-}
-
-// 主按钮逻辑
-function handleMainAction() {
-    if (currentMode === 'Solve Assist') {
-        alert("请根据您手上的魔方点击方块填色，完成后我们将开始引导步复原。");
-        return;
-    }
-    scramble();
-}
-
-function scramble() {
-    if (isRotating) return;
-    isPlaying = true;
-    let count = 0;
-    const interval = setInterval(() => {
-        const axes = ['x', 'y', 'z'];
-        rotateLayer(axes[Math.floor(Math.random()*3)], Math.floor(Math.random()*cubeSize));
-        if (++count > 10) {
-            clearInterval(interval);
-            if (currentMode === 'Time Trial') startTimer();
-        }
-    }, 300);
-}
-
-function rotateLayer(axis, layerIndex) {
+// 核心：旋转逻辑 + 闪动特效
+function rotateLayer(axis, layerIdx, angle) {
     if (isRotating) return;
     isRotating = true;
+
     const pivot = new THREE.Group();
     scene.add(pivot);
     const offset = (cubeSize - 1) / 2;
 
     const targets = cubies.filter(c => {
-        const pos = new THREE.Vector3();
-        c.getWorldPosition(pos);
-        return Math.abs(pos[axis] - (layerIndex - offset)) < 0.1;
+        const wp = new THREE.Vector3();
+        c.getWorldPosition(wp);
+        return Math.abs(wp[axis] - (layerIdx - offset)) < 0.1;
     });
 
-    targets.forEach(c => pivot.attach(c));
-    new TWEEN.Tween(pivot.rotation).to({ [axis]: Math.PI / 2 }, 250).onComplete(() => {
-        targets.forEach(c => {
-            cubeGroup.attach(c);
-            // 关键修复：旋转后舍入坐标，防止浮点数误差导致“卡死”
-            c.position.x = Math.round(c.position.x * 10) / 10;
-            c.position.y = Math.round(c.position.y * 10) / 10;
-            c.position.z = Math.round(c.position.z * 10) / 10;
+    // 闪动青色特效
+    targets.forEach(c => {
+        c.material.forEach(m => {
+            const oldC = m.color.getHex();
+            m.color.setHex(0x00f2ff); // 青色高亮
+            setTimeout(() => m.color.setHex(oldC), 300);
         });
-        scene.remove(pivot);
-        isRotating = false;
-        if (isPlaying) checkSolved();
-    }).start();
+        pivot.attach(c);
+    });
+
+    new TWEEN.Tween(pivot.rotation)
+        .to({ [axis]: pivot.rotation[axis] + angle }, 350)
+        .easing(TWEEN.Easing.Circular.Out)
+        .onComplete(() => {
+            targets.forEach(c => {
+                cubeGroup.attach(c);
+                c.position.set(Math.round(c.position.x*10)/10, Math.round(c.position.y*10)/10, Math.round(c.position.z*10)/10);
+            });
+            scene.remove(pivot);
+            isRotating = false;
+            if(isPlaying) checkSolved();
+        }).start();
+}
+
+function execRotate(dir) {
+    const layer = parseInt(document.getElementById('layer-idx').value);
+    // 默认旋转 Y 轴（水平转），你可以通过逻辑切换 X/Y/Z
+    rotateLayer('y', layer, (Math.PI/2) * dir);
+}
+
+function setupRaycaster() {
+    const ray = new THREE.Raycaster();
+    const m = new THREE.Vector2();
+    const handler = (e) => {
+        if(currentMode !== 'Assist') return;
+        const cx = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const cy = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        m.x = (cx / window.innerWidth) * 2 - 1;
+        m.y = -(cy / window.innerHeight) * 2 + 1;
+        ray.setFromCamera(m, camera);
+        const hits = ray.intersectObjects(cubies);
+        if(hits.length > 0) {
+            const face = Math.floor(hits[0].faceIndex / 2);
+            hits[0].object.material[face].color.setHex(COLORS[selectedColor]);
+        }
+    };
+    window.addEventListener('mousedown', handler);
+    window.addEventListener('touchstart', handler);
+}
+
+function setMode(m) {
+    currentMode = m;
+    isPlaying = false;
+    clearInterval(timerInt);
+    document.getElementById('timer').innerText = "00:00.0";
+    document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+    document.getElementById('b-' + m.toLowerCase().replace(' ', '')).classList.add('active');
+    
+    // UI 状态切换
+    document.getElementById('m-label').innerText = m.toUpperCase();
+    document.getElementById('palette').style.display = (m==='Assist'?'flex':'none');
+    document.getElementById('phys-ctrl').style.display = (m==='Assist'?'none':'flex');
+    
+    // 玩法指南
+    const guides = {
+        'Classic': "<b>玩法玩法:</b><br>选择层(Layer)并按箭头旋转。旨在练习公式，无压力。",
+        'Time Trial': "<b>玩法玩法:</b><br>点击打乱后自动计时。复原后系统自动保存你的最快记录！",
+        'Assist': "<b>玩法玩法:</b><br>从调色盘选择颜色，点击魔方块进行填色。模拟你手中的真实魔方。"
+    };
+    document.getElementById('guide-content').innerHTML = guides[m];
+    buildCube();
+}
+
+function doScramble() {
+    let s = 0;
+    const itv = setInterval(() => {
+        rotateLayer(['x','y','z'][Math.floor(Math.random()*3)], Math.floor(Math.random()*cubeSize), Math.PI/2);
+        if(++s > 10) {
+            clearInterval(itv);
+            if(currentMode==='Time Trial') startT();
+        }
+    }, 400);
+}
+
+function startT() {
+    isPlaying = true; startTime = Date.now();
+    timerInt = setInterval(() => {
+        document.getElementById('timer').innerText = ((Date.now()-startTime)/1000).toFixed(1) + 's';
+    }, 100);
 }
 
 function checkSolved() {
-    // 检查逻辑：是否所有方块都在原位且颜色朝向一致
-    // 此处简化演示：如果计时器在跑且玩家点击了结束（或逻辑判断成功）
-    // 在真实逻辑中，我们会对比 cubie.position 与 userData.home
-}
-
-// 计时器系统
-function startTimer() {
-    startTime = Date.now();
-    timerInterval = setInterval(() => {
-        const diff = Date.now() - startTime;
-        const s = (diff / 1000).toFixed(1);
-        document.getElementById('timer-display').innerText = s.padStart(4, '0') + 's';
-    }, 100);
-    document.getElementById('main-action-btn').innerHTML = "完成复原！<br><span>I'M DONE</span>";
-    document.getElementById('main-action-btn').onclick = finishChallenge;
-}
-
-function finishChallenge() {
-    stopTimer();
-    const result = document.getElementById('timer-display').innerText;
-    saveHistory(result);
-    alert("挑战结束！用时: " + result);
-    document.getElementById('main-action-btn').innerHTML = "重新打乱<br><span>SCRAMBLE</span>";
-    document.getElementById('main-action-btn').onclick = handleMainAction;
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-    isPlaying = false;
-}
-
-// 模式切换
-function changeMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
-    document.getElementById(`btn-${mode.replace(' ', '')}`).classList.add('active');
-    document.getElementById('mode-text').innerText = (mode==='Classic'?'经典模式 Classic':(mode==='Time Trial'?'计时挑战 Time Trial':'辅助模式 Assist'));
-    document.getElementById('assist-hint').style.display = (mode === 'Solve Assist') ? 'block' : 'none';
-    if(mode === 'Solve Assist') {
-        document.getElementById('main-action-btn').innerHTML = "开始引导复原<br><span>START SOLVE</span>";
-    } else {
-        document.getElementById('main-action-btn').innerHTML = "打乱魔方<br><span>SCRAMBLE</span>";
+    const win = cubies.every(c => c.getWorldPosition(new THREE.Vector3()).distanceTo(c.userData.initialPos) < 0.1);
+    if(win) {
+        clearInterval(timerInt);
+        const res = document.getElementById('timer').innerText;
+        saveScore(res);
+        alert("复原成功！Saved: " + res);
+        isPlaying = false;
     }
 }
 
-function changeSize(s) { cubeSize = s; createCube(); }
-
-// 历史记录持久化
-function saveHistory(val) {
-    let logs = JSON.parse(localStorage.getItem('cube_logs') || '[]');
-    logs.unshift({ time: val, date: new Date().toLocaleTimeString(), size: cubeSize + 'x' + cubeSize });
-    if (logs.length > 10) logs = logs.slice(0, 10);
-    localStorage.setItem('cube_logs', JSON.stringify(logs));
-    loadHistory();
+function saveScore(t) {
+    let logs = JSON.parse(localStorage.getItem('my_cube_logs') || '[]');
+    logs.unshift({ time: t, date: new Date().toLocaleTimeString(), size: cubeSize+'x'+cubeSize });
+    localStorage.setItem('my_cube_logs', JSON.stringify(logs.slice(0, 10)));
+    refreshHistory();
 }
 
-function loadHistory() {
-    const logs = JSON.parse(localStorage.getItem('cube_logs') || '[]');
-    const list = document.getElementById('history-list');
-    list.innerHTML = '';
-    logs.forEach(l => {
-        const li = document.createElement('li');
-        li.className = 'history-item';
-        li.innerHTML = `<span>${l.date} (${l.size})</span> <b>${l.time}</b>`;
-        list.appendChild(li);
-    });
-    document.getElementById('log-count').innerText = logs.length + "/10";
+function refreshHistory() {
+    const logs = JSON.parse(localStorage.getItem('my_cube_logs') || '[]');
+    document.getElementById('hist-list').innerHTML = logs.map(l => `<div class="hist-item"><span>${l.size}</span><b>${l.time}</b></div>`).join('');
 }
 
-// 视角旋转（拖拽空白处）
-let isDragging = false, lastX, lastY;
-window.addEventListener('mousedown', e => { if(e.target == document.body) { isDragging = true; lastX = e.clientX; lastY = e.clientY; }});
-window.addEventListener('mousemove', e => {
-    if(isDragging) {
-        cubeGroup.rotation.y += (e.clientX - lastX) * 0.01;
-        cubeGroup.rotation.x += (e.clientY - lastY) * 0.01;
-        lastX = e.clientX; lastY = e.clientY;
-    }
-});
-window.addEventListener('mouseup', () => isDragging = false);
+function pickColor(idx, el) {
+    selectedColor = idx;
+    document.querySelectorAll('.ink').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+}
 
-function animate(time) {
+function changeSize(s) { cubeSize = s; buildCube(); }
+
+function animate() {
     requestAnimationFrame(animate);
-    TWEEN.update(time);
+    TWEEN.update();
     renderer.render(scene, camera);
+    // 视角缓动旋转
+    if(!isRotating) cubeGroup.rotation.y += 0.002;
 }
 
 init();
+setMode('Classic');
+pickColor(0, document.querySelector('.ink'));
 </script>
 </body>
-</html>
+</html>>
