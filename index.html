@@ -3,35 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro Magnetic Rubik's Cube - v1.0</title>
+    <title>Pro Rubik's Cube - Fixed 90° Rotation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
     <style>
-        /* 关键修复：防止移动端浏览器（如 Telegram/Safari）的下拉刷新和侧滑退出 */
         html, body { 
-            margin: 0; 
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; 
-            background-color: #020617; 
-            font-family: 'Inter', system-ui, sans-serif; 
-            /* 阻止所有方向的弹性滚动和手势触发 */
-            overscroll-behavior: none;
-            touch-action: none; 
-            position: fixed;
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+            background-color: #020617; font-family: 'Inter', system-ui, sans-serif; 
+            overscroll-behavior: none; touch-action: none; position: fixed;
         }
-        
-        #canvas-container { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            touch-action: none;
-        }
-        
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; }
         .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .btn-action { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; pointer-events: auto; }
         .btn-action:hover { transform: scale(1.05); filter: brightness(1.2); }
@@ -44,22 +26,16 @@
     </style>
 </head>
 <body>
-
     <div id="canvas-container"></div>
-
-    <!-- UI 覆盖层 -->
     <div class="fixed inset-0 pointer-events-none flex flex-col justify-between p-6">
-        <!-- 顶部状态栏 -->
         <div class="flex justify-between items-start pointer-events-auto">
             <div class="glass-panel rounded-3xl px-8 py-4 shadow-2xl flex flex-col items-center min-w-[160px]">
                 <div id="timer-label" class="stats-label text-[10px] font-bold uppercase mb-1">等待打乱</div>
                 <div id="timer-display" class="text-4xl font-black text-white italic">00:00.00</div>
             </div>
-            
             <div id="status-message" class="hidden glass-panel rounded-full px-8 py-3 text-green-400 font-black animate-bounce shadow-[0_0_30px_rgba(34,197,94,0.4)] border-green-500/50">
                 复原成功! 🎉
             </div>
-
             <div class="flex flex-col gap-3">
                 <button id="start-btn" onclick="cube.startGame()" class="btn-action bg-blue-600 rounded-2xl px-6 py-3 text-white font-black shadow-[0_0_20px_rgba(37,99,235,0.4)]">
                     开始挑战
@@ -69,16 +45,12 @@
                 </button>
             </div>
         </div>
-
-        <!-- 居中引导说明 -->
         <div id="guide-overlay" class="absolute left-1/2 top-1/4 -translate-x-1/2 text-white/30 text-xs font-bold tracking-widest text-center uppercase">
-            滑动魔方表面旋转层 <br> 滑动背景旋转视角
+            直线滑动层 | 背景旋转视角
         </div>
-
-        <!-- 底部版本信息 -->
         <div class="flex justify-center items-end pointer-events-auto">
             <div class="glass-panel rounded-full px-6 py-2 text-slate-400 text-[10px] font-bold uppercase tracking-tighter">
-                磁力引擎 v1.0 | 毫秒级同步计时系统
+                机械快感引擎 v1.2 | 兼容性修复方案
             </div>
         </div>
     </div>
@@ -93,7 +65,6 @@
                 this.isGameActive = false;
                 this.isScrambling = false;
                 this.moveQueue = []; 
-                
                 this.colors = [0xef4444, 0xf97316, 0xf8fafc, 0xfacc15, 0x3b82f6, 0x22c55e];
 
                 this.initScene();
@@ -103,32 +74,27 @@
                 this.preventNativeGestures();
             }
 
-            // 强制阻止浏览器原生手势
             preventNativeGestures() {
-                const preventDefault = (e) => {
-                    if (e.touches && e.touches.length > 1) return; // 允许双指缩放（可选）
-                    e.preventDefault();
-                };
-                // 必须在 addEventListener 中显式设置 passive: false 才能调用 preventDefault
-                document.addEventListener('touchstart', preventDefault, { passive: false });
-                document.addEventListener('touchmove', preventDefault, { passive: false });
+                const prevent = (e) => { if (e.touches && e.touches.length <= 1) e.preventDefault(); };
+                document.addEventListener('touchstart', prevent, { passive: false });
+                document.addEventListener('touchmove', prevent, { passive: false });
             }
 
             initScene() {
                 this.scene = new THREE.Scene();
-                this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-                this.camera.position.set(8, 8, 14);
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(7, 7, 12);
                 this.camera.lookAt(0, 0, 0);
 
                 this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setPixelRatio(window.devicePixelRatio);
                 this.container.appendChild(this.renderer.domElement);
 
-                this.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-                const spotLight = new THREE.SpotLight(0xffffff, 0.5);
-                spotLight.position.set(10, 20, 10);
-                this.scene.add(spotLight);
+                this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+                dirLight.position.set(10, 20, 10);
+                this.scene.add(dirLight);
 
                 this.worldGroup = new THREE.Group();
                 this.scene.add(this.worldGroup);
@@ -141,9 +107,9 @@
             }
 
             createCube() {
-                this.cubies.forEach(c => this.worldGroup.remove(c));
+                while(this.worldGroup.children.length > 0) this.worldGroup.remove(this.worldGroup.children[0]);
                 this.cubies = [];
-                const geom = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+                const geom = new THREE.BoxGeometry(0.97, 0.97, 0.97);
                 const offset = (this.size - 1) / 2;
 
                 for (let x = 0; x < this.size; x++) {
@@ -153,12 +119,8 @@
                                 let isVisible = (i === 0 && x === 2) || (i === 1 && x === 0) || 
                                                 (i === 2 && y === 2) || (i === 3 && y === 0) || 
                                                 (i === 4 && z === 2) || (i === 5 && z === 0);
-                                return new THREE.MeshPhongMaterial({ 
-                                    color: isVisible ? color : 0x0f172a,
-                                    shininess: 40
-                                });
+                                return new THREE.MeshPhongMaterial({ color: isVisible ? color : 0x0f172a });
                             });
-
                             const cubie = new THREE.Mesh(geom, mats);
                             cubie.position.set(x - offset, y - offset, z - offset);
                             cubie.userData.origPos = cubie.position.clone();
@@ -174,13 +136,16 @@
                 this.mouse = new THREE.Vector2();
                 this.startPoint = new THREE.Vector2();
 
+                const getCoords = (e) => ({
+                    x: e.touches ? e.touches[0].clientX : e.clientX,
+                    y: e.touches ? e.touches[0].clientY : e.clientY
+                });
+
                 const handleDown = (e) => {
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                    this.startPoint.set(clientX, clientY);
-                    
-                    this.mouse.x = (clientX / window.innerWidth) * 2 - 1;
-                    this.mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+                    const coords = getCoords(e);
+                    this.startPoint.set(coords.x, coords.y);
+                    this.mouse.x = (coords.x / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(coords.y / window.innerHeight) * 2 + 1;
                     this.raycaster.setFromCamera(this.mouse, this.camera);
                     
                     const intersects = this.raycaster.intersectObjects(this.cubies);
@@ -188,35 +153,34 @@
                         this.intersectedCubie = intersects[0].object;
                         const normal = intersects[0].face.normal.clone();
                         normal.applyQuaternion(this.intersectedCubie.quaternion);
+                        normal.applyQuaternion(this.worldGroup.quaternion);
                         this.intersectedFaceNormal = normal;
                         this.isDraggingCube = true;
+                        this.isDraggingView = false;
                     } else {
                         this.isDraggingView = true;
+                        this.isDraggingCube = false;
                     }
-                    this.previousMouse = { x: clientX, y: clientY };
+                    this.previousMouse = coords;
                 };
 
                 const handleMove = (e) => {
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
+                    const coords = getCoords(e);
                     if (this.isDraggingView) {
-                        this.worldGroup.rotation.y += (clientX - this.previousMouse.x) * 0.007;
-                        this.worldGroup.rotation.x += (clientY - this.previousMouse.y) * 0.007;
-                        this.previousMouse = { x: clientX, y: clientY };
-                    } else if (this.isDraggingCube && !this.isRotating && this.isGameActive) {
-                        const dist = this.startPoint.distanceTo(new THREE.Vector2(clientX, clientY));
-                        if (dist > 25) { 
-                            this.handleSwipe(clientX, clientY);
+                        this.worldGroup.rotation.y += (coords.x - this.previousMouse.x) * 0.006;
+                        this.worldGroup.rotation.x += (coords.y - this.previousMouse.y) * 0.006;
+                        this.previousMouse = coords;
+                    } else if (this.isDraggingCube && !this.isRotating && (this.isGameActive || !this.isScrambling)) {
+                        const dx = coords.x - this.startPoint.x;
+                        const dy = coords.y - this.startPoint.y;
+                        if (Math.sqrt(dx*dx + dy*dy) > 15) { 
+                            this.handleSwipe(coords.x, coords.y);
                             this.isDraggingCube = false;
                         }
                     }
                 };
 
-                const handleUp = () => {
-                    this.isDraggingCube = false;
-                    this.isDraggingView = false;
-                };
+                const handleUp = () => { this.isDraggingCube = false; this.isDraggingView = false; };
 
                 this.container.addEventListener('mousedown', handleDown);
                 window.addEventListener('mousemove', handleMove);
@@ -229,25 +193,27 @@
             handleSwipe(endX, endY) {
                 const swipeDir = new THREE.Vector2(endX - this.startPoint.x, this.startPoint.y - endY).normalize();
                 const normal = this.intersectedFaceNormal;
-                const worldPos = this.intersectedCubie.position.clone();
+                const worldPos = new THREE.Vector3().copy(this.intersectedCubie.position).applyMatrix4(this.worldGroup.matrixWorld);
+                
                 const axes = [
-                    { name: 'x', vector: new THREE.Vector3(1, 0, 0) },
-                    { name: 'y', vector: new THREE.Vector3(0, 1, 0) },
-                    { name: 'z', vector: new THREE.Vector3(0, 0, 1) }
+                    { name: 'x', vector: new THREE.Vector3(1, 0, 0).applyQuaternion(this.worldGroup.quaternion) },
+                    { name: 'y', vector: new THREE.Vector3(0, 1, 0).applyQuaternion(this.worldGroup.quaternion) },
+                    { name: 'z', vector: new THREE.Vector3(0, 0, 1).applyQuaternion(this.worldGroup.quaternion) }
                 ];
 
                 let bestAxis = null, bestDir = 1, maxCorrelation = -Infinity;
 
-                axes.forEach(axis => {
-                    if (Math.abs(axis.vector.dot(normal)) > 0.9) return;
+                axes.forEach((axis, idx) => {
+                    if (Math.abs(axis.vector.dot(normal)) > 0.8) return;
                     const tangent = new THREE.Vector3().crossVectors(axis.vector, normal).normalize();
                     const pStart = worldPos.clone().project(this.camera);
                     const pEnd = worldPos.clone().add(tangent).project(this.camera);
                     const screenTangent = new THREE.Vector2(pEnd.x - pStart.x, pEnd.y - pStart.y).normalize();
+                    
                     const correlation = swipeDir.dot(screenTangent);
                     if (Math.abs(correlation) > maxCorrelation) {
                         maxCorrelation = Math.abs(correlation);
-                        bestAxis = axis.name;
+                        bestAxis = ['x', 'y', 'z'][idx];
                         bestDir = correlation > 0 ? 1 : -1;
                     }
                 });
@@ -276,9 +242,13 @@
                 this.worldGroup.add(pivot);
                 movingCubies.forEach(c => pivot.attach(c));
 
+                // 修正 Easing 的引用，确保在不同版本的 TWEEN.js 中都能工作
+                // 使用 Quadratic 代替 Sine 以增强兼容性
+                const easingFunc = TWEEN.Easing.Quadratic.InOut;
+
                 new TWEEN.Tween(pivot.rotation)
-                    .to({ [axis]: angle }, this.isScrambling ? 120 : 300)
-                    .easing(this.isScrambling ? TWEEN.Easing.Quadratic.Out : TWEEN.Easing.Back.Out) 
+                    .to({ [axis]: angle }, 180) 
+                    .easing(easingFunc) 
                     .onComplete(() => {
                         pivot.updateMatrixWorld();
                         [...pivot.children].forEach(c => {
@@ -297,10 +267,8 @@
                 if (this.isGameActive || this.isScrambling) return;
                 this.reset();
                 this.isScrambling = true;
-                
                 document.getElementById('start-btn').classList.add('btn-disabled');
                 document.getElementById('timer-label').innerText = "正在打乱...";
-                document.getElementById('timer-label').classList.add('scrambling-text');
                 
                 const axes = ['x', 'y', 'z'];
                 const layers = [-1, 0, 1];
@@ -308,20 +276,16 @@
 
                 for(let i=0; i < scrambleCount; i++) {
                     const isLast = i === scrambleCount - 1;
-                    const callback = isLast ? () => {
-                        this.isScrambling = false;
-                        this.isGameActive = true;
-                        this.startTimer();
-                        document.getElementById('timer-label').innerText = "计时中";
-                        document.getElementById('timer-label').classList.remove('scrambling-text');
-                        document.getElementById('guide-overlay').innerText = "挑战开始！";
-                    } : null;
-
                     this.pushMove(
                         axes[Math.floor(Math.random()*3)], 
                         layers[Math.floor(Math.random()*3)], 
                         Math.random() > 0.5 ? 1 : -1,
-                        callback
+                        isLast ? () => {
+                            this.isScrambling = false;
+                            this.isGameActive = true;
+                            this.startTimer();
+                            document.getElementById('timer-label').innerText = "计时中";
+                        } : null
                     );
                 }
             }
@@ -332,16 +296,14 @@
                     const p = c.position;
                     const op = c.userData.origPos;
                     const posMatch = Math.round(p.x) === Math.round(op.x) && Math.round(p.y) === Math.round(op.y) && Math.round(p.z) === Math.round(op.z);
-                    const rotMatch = c.quaternion.angleTo(new THREE.Quaternion()) < 0.01;
+                    const rotMatch = c.quaternion.angleTo(new THREE.Quaternion()) < 0.1;
                     return posMatch && rotMatch;
                 });
-
                 if (solved) {
                     this.isGameActive = false;
                     this.stopTimer();
                     document.getElementById('status-message').classList.remove('hidden');
                     document.getElementById('start-btn').classList.remove('btn-disabled');
-                    document.getElementById('timer-label').innerText = "挑战完成！";
                 }
             }
 
@@ -353,10 +315,10 @@
                     const s = Math.floor((d%60000)/1000).toString().padStart(2,'0');
                     const ms = Math.floor((d%1000)/10).toString().padStart(2,'0');
                     document.getElementById('timer-display').innerText = `${m}:${s}.${ms}`;
-                }, 40);
+                }, 50);
             }
 
-            stopTimer() { clearInterval(this.timerInterval); this.timerInterval = null; }
+            stopTimer() { clearInterval(this.timerInterval); }
 
             reset() {
                 this.stopTimer();
@@ -364,13 +326,11 @@
                 this.isScrambling = false;
                 this.moveQueue = [];
                 this.createCube();
-                this.worldGroup.rotation.set(0, 0, 0);
+                this.worldGroup.rotation.set(0.4, 0.4, 0);
                 document.getElementById('status-message').classList.add('hidden');
                 document.getElementById('timer-display').innerText = "00:00.00";
-                document.getElementById('timer-label').innerText = "已重置归零";
-                document.getElementById('timer-label').classList.remove('scrambling-text');
+                document.getElementById('timer-label').innerText = "已就绪";
                 document.getElementById('start-btn').classList.remove('btn-disabled');
-                document.getElementById('guide-overlay').innerText = "滑动魔方表面旋转层";
             }
 
             animate() {
@@ -380,7 +340,6 @@
                 this.renderer.render(this.scene, this.camera);
             }
         }
-
         const cube = new RubiksCube('canvas-container');
     </script>
 </body>
