@@ -2,14 +2,36 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pro Magnetic Rubik's Cube - v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #020617; font-family: 'Inter', system-ui, sans-serif; touch-action: none; user-select: none; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* 关键修复：防止移动端浏览器（如 Telegram/Safari）的下拉刷新和侧滑退出 */
+        html, body { 
+            margin: 0; 
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; 
+            background-color: #020617; 
+            font-family: 'Inter', system-ui, sans-serif; 
+            /* 阻止所有方向的弹性滚动和手势触发 */
+            overscroll-behavior: none;
+            touch-action: none; 
+            position: fixed;
+        }
+        
+        #canvas-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            touch-action: none;
+        }
+        
         .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .btn-action { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; pointer-events: auto; }
         .btn-action:hover { transform: scale(1.05); filter: brightness(1.2); }
@@ -78,6 +100,18 @@
                 this.createCube();
                 this.initInteraction();
                 this.animate();
+                this.preventNativeGestures();
+            }
+
+            // 强制阻止浏览器原生手势
+            preventNativeGestures() {
+                const preventDefault = (e) => {
+                    if (e.touches && e.touches.length > 1) return; // 允许双指缩放（可选）
+                    e.preventDefault();
+                };
+                // 必须在 addEventListener 中显式设置 passive: false 才能调用 preventDefault
+                document.addEventListener('touchstart', preventDefault, { passive: false });
+                document.addEventListener('touchmove', preventDefault, { passive: false });
             }
 
             initScene() {
@@ -187,13 +221,12 @@
                 this.container.addEventListener('mousedown', handleDown);
                 window.addEventListener('mousemove', handleMove);
                 window.addEventListener('mouseup', handleUp);
-                this.container.addEventListener('touchstart', handleDown);
-                window.addEventListener('touchmove', handleMove);
+                this.container.addEventListener('touchstart', handleDown, { passive: false });
+                window.addEventListener('touchmove', handleMove, { passive: false });
                 window.addEventListener('touchend', handleUp);
             }
 
             handleSwipe(endX, endY) {
-                // 计算屏幕空间滑动方向
                 const swipeDir = new THREE.Vector2(endX - this.startPoint.x, this.startPoint.y - endY).normalize();
                 const normal = this.intersectedFaceNormal;
                 const worldPos = this.intersectedCubie.position.clone();
@@ -207,16 +240,10 @@
 
                 axes.forEach(axis => {
                     if (Math.abs(axis.vector.dot(normal)) > 0.9) return;
-                    
-                    // 计算在此面上旋转该轴时，小方块应该移动的切向运动方向
                     const tangent = new THREE.Vector3().crossVectors(axis.vector, normal).normalize();
-                    
-                    // 将运动方向投影至 2D 屏幕空间
                     const pStart = worldPos.clone().project(this.camera);
                     const pEnd = worldPos.clone().add(tangent).project(this.camera);
                     const screenTangent = new THREE.Vector2(pEnd.x - pStart.x, pEnd.y - pStart.y).normalize();
-                    
-                    // 比较滑动方向与切线方向的匹配度（点积）
                     const correlation = swipeDir.dot(screenTangent);
                     if (Math.abs(correlation) > maxCorrelation) {
                         maxCorrelation = Math.abs(correlation);
@@ -249,7 +276,6 @@
                 this.worldGroup.add(pivot);
                 movingCubies.forEach(c => pivot.attach(c));
 
-                // 使用 Back.Out 模拟磁铁吸附的轻微过冲感
                 new TWEEN.Tween(pivot.rotation)
                     .to({ [axis]: angle }, this.isScrambling ? 120 : 300)
                     .easing(this.isScrambling ? TWEEN.Easing.Quadratic.Out : TWEEN.Easing.Back.Out) 
@@ -282,7 +308,6 @@
 
                 for(let i=0; i < scrambleCount; i++) {
                     const isLast = i === scrambleCount - 1;
-                    // 在打乱动作序列的最后一个动作完成后开启计时
                     const callback = isLast ? () => {
                         this.isScrambling = false;
                         this.isGameActive = true;
